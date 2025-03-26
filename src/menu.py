@@ -4,6 +4,12 @@ class Menu:
     def __init__(self):
         self.reiniciar_estado()
         self.data_loader = DataLoader()
+        self.opciones_estado = {
+            "1. Cargar datos": "cargar_datos",
+            "2. Preprocesado de datos": "preprocesar_datos",
+            "3. Visualización de datos": "visualizar_datos",
+            "4. Exportar datos": "exportar_datos",
+        }
 
     def reiniciar_estado(self):
         self.estado = {
@@ -24,7 +30,10 @@ class Menu:
         print("[✓] 5. Salir")
         
     def habilitado(self, texto, hab):
-        clave_estado = texto.split(". ")[1].replace(" ", "_").lower() 
+        clave_estado = self.opciones_estado.get(texto, None)  # Buscar clave en el diccionario 
+        
+        if clave_estado is None:
+            return texto  # Si la opción no está en el diccionario, devolver el texto tal cual
         if self.estado.get(clave_estado, False):
             return f"[✓] {texto}"  # 🔹 La opción ya se completó
         elif hab:
@@ -66,6 +75,11 @@ class Menu:
                 print("Opción no válida. Intente nuevamente.")
 
     def cargar_datos(self):
+
+        if self.estado["cargar_datos"]:
+            print("Los datos ya han sido cargados. No puedes volver a realizar esta acción.")
+            return
+        
         print("=============================")
         print("Carga de Datos")
         print("=============================")
