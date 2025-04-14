@@ -1,11 +1,11 @@
 from data_loader import DataLoader
+from preprocesado_datos import PreprocesadoDatos
 
 class Menu:
     def __init__(self):
         self.reiniciar_estado()
         self.data_loader = DataLoader()
-        self.features = []
-        self.target = None
+        self.preprocesado_datos = PreprocesadoDatos(self.data_loader)
 
         self.opciones_estado = {
             "1. Cargar datos": "cargar_datos",
@@ -37,6 +37,10 @@ class Menu:
             "normalizacion_escalado": False,
             "deteccion_atipicos": False,
         }
+    
+    def todos_preprocesados_completos(self):
+        """Verifica si todas las subopciones de preprocesado están completas"""
+        return all(self.estado_subopciones.values())
 
     def menu(self):
         print("=============================")
@@ -47,23 +51,16 @@ class Menu:
         print(self.habilitado("1. Cargar datos", True))
 
         if self.estado["cargar_datos"]:
-            # Si todas las subopciones están completadas (por ejemplo, detección_atipicos), habilitar Preprocesado
-            if all(self.estado_subopciones.values()):
+            if (self.habilitado("2. Preprocesado de datos", True)):
                 print(self.habilitado("2. Preprocesado de datos", True))
-            else:
-                print(self.habilitado("2. Preprocesado de datos", False))
-
-            # Mostrar subopciones de preprocesado siguiendo el flujo de habilitación
-            print("    " + self.habilitado("2.1 Selección de columnas", self.estado_subopciones["seleccionar_columnas"]))
-            print("    " + self.habilitado("2.2 Manejo de datos faltantes", self.estado_subopciones["manejo_datos_faltantes"]))
-            print("    " + self.habilitado("2.3 Transformación de datos categóricos", self.estado_subopciones["transformacion_categoricos"]))
-            print("    " + self.habilitado("2.4 Normalización y escalado", self.estado_subopciones["normalizacion_escalado"]))
-            print("    " + self.habilitado("2.5 Detección y manejo de valores atípicos", self.estado_subopciones["deteccion_atipicos"]))
+                print("    " + self.habilitado("2.1 Selección de columnas", not self.estado_subopciones["seleccionar_columnas"]))
+                print("    " + self.habilitado("2.2 Manejo de datos faltantes", self.estado_subopciones["seleccionar_columnas"]))
+                print("    " + self.habilitado("2.3 Transformación de datos categóricos", self.estado_subopciones["manejo_datos_faltantes"]))
+                print("    " + self.habilitado("2.4 Normalización y escalado", self.estado_subopciones["transformacion_categoricos"]))
+                print("    " + self.habilitado("2.5 Detección y manejo de valores atípicos", self.estado_subopciones["normalizacion_escalado"]))
         else:
             print(self.habilitado("2. Preprocesado de datos", False))
 
-
-        # Las opciones de visualización y exportación solo se habilitan cuando se haya completado detección de atípicos
         if self.estado_subopciones["deteccion_atipicos"]:
             print(self.habilitado("3. Visualización de datos", True))
             print(self.habilitado("4. Exportar datos", True))
@@ -71,8 +68,8 @@ class Menu:
             print(self.habilitado("3. Visualización de datos", False))
             print(self.habilitado("4. Exportar datos", False))
 
-        # Mostrar opción de salir
         print("[✓] 5. Salir")
+
 
         
     def habilitado(self, texto, hab):
@@ -94,16 +91,29 @@ class Menu:
         if opcion == "1":
             self.cargar_datos()
         elif opcion == "2" and self.estado["cargar_datos"]:
+            self.estado["preprocesar_datos"] = False
+        elif opcion == "2.1":
             self.seleccionar_columnas()
-        elif opcion == "3" and self.estado["preprocesar_datos"]:
+        elif opcion == "2.2" and self.estado_subopciones["seleccionar_columnas"]:
+            self.estado_subopciones["manejo_datos_faltantes"] = True
+        elif opcion == "2.3" and self.estado_subopciones["manejo_datos_faltantes"]:
+            self.estado_subopciones["transformacion_categoricos"] = True
+        elif opcion == "2.4" and self.estado_subopciones["transformacion_categoricos"]:
+            self.estado_subopciones["normalizacion_escalado"] = True
+        elif opcion == "2.5" and self.estado_subopciones["normalizacion_escalado"]:
+            self.estado_subopciones["deteccion_atipicos"] = True
+            self.estado["preprocesar_datos"] = True
+            self.estado["preprocesar_datos"] = True
+        elif opcion == "3" and self.estado["preprocesar_datos"] and self.estado_subopciones["deteccion_atipicos"]:
             self.estado["visualizar_datos"] = True
-        elif opcion == "4" and self.estado["preprocesar_datos"]:
+        elif opcion == "4" and self.estado["preprocesar_datos"] and self.estado_subopciones["deteccion_atipicos"]:
             self.estado["exportar_datos"] = True
         elif opcion == "5":
             return self.salir()
         else:
             print("Opción no válida o bloqueada. Intente nuevamente.")
         return True
+
     
     def salir(self):
         while True:
@@ -153,34 +163,25 @@ class Menu:
         if self.data_loader.dataset is not None:
             self.data_loader.mostrar_informacion()
             self.estado["cargar_datos"] = True
-
+        
     def seleccionar_columnas(self):
         print("=============================")
         print("Selección de Columnas")
         print("=============================")
+        
+        print("Columnas disponibles en los datos:")
         columnas = list(self.data_loader.dataset.columns)
-        for i, col in enumerate(columnas, 1):
-            print(f"  [{i}] {col}")
-
+        for i, columna in enumerate(columnas, 1):
+            print(f"  [{i}] {columna}")
+        
         try:
             features_input = input("Ingrese los números de las columnas de entrada (features), separados por comas: ")
-            features_idx = list(map(int, features_input.split(',')))
-            self.features = [columnas[i - 1] for i in features_idx]
-
-            target_input = input("Ingrese el número de la columna de salida (target): ")
-            target_idx = int(target_input)
-            self.target = columnas[target_idx - 1]
-
-            if self.target in self.features:
-                raise ValueError("El target no puede estar en las features.")
-
-            print(f"Selección guardada: Features = {self.features}, Target = {self.target}")
-            self.estado["preprocesar_datos"] = True
+            target_input = int(input("Ingrese el número de la columna de salida (target): "))
+            self.preprocesado_datos.seleccionar_columnas(features_input, target_input)
+            print(f"Selección guardada: Features = {self.preprocesado_datos.features}, Target = {self.preprocesado_datos.target}")
             self.estado_subopciones["seleccionar_columnas"] = True
         except (ValueError, IndexError):
-            print("⚠ Error: Debe seleccionar al menos una feature y un único target que no esté en las features.")
-            self.features = []
-            self.target = None
+            print("⚠ Error: Debe seleccionar columnas válidas. Intente nuevamente.")
 
     def iniciar(self):
         while True:
