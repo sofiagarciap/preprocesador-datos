@@ -95,6 +95,7 @@ class Menu:
         elif opcion == "2.1":
             self.seleccionar_columnas()
         elif opcion == "2.2" and self.estado_subopciones["seleccionar_columnas"]:
+            self.preprocesado_datos.manejo_valores_faltantes()
             self.estado_subopciones["manejo_datos_faltantes"] = True
         elif opcion == "2.3" and self.estado_subopciones["manejo_datos_faltantes"]:
             self.estado_subopciones["transformacion_categoricos"] = True
@@ -178,8 +179,13 @@ class Menu:
             features_input = input("Ingrese los números de las columnas de entrada (features), separados por comas: ")
             target_input = int(input("Ingrese el número de la columna de salida (target): "))
             self.preprocesado_datos.seleccionar_columnas(features_input, target_input)
-            print(f"Selección guardada: Features = {self.preprocesado_datos.features}, Target = {self.preprocesado_datos.target}")
-            self.estado_subopciones["seleccionar_columnas"] = True
+            if self.preprocesado_datos.target in self.preprocesado_datos.features:
+                print("⚠ Error: La columna de salida no puede ser una feature.")
+                self.preprocesado_datos.features = []
+                self.preprocesado_datos.target = None
+            else: 
+                print(f"Selección guardada: Features = {self.preprocesado_datos.features}, Target = {self.preprocesado_datos.target}")
+                self.estado_subopciones["seleccionar_columnas"] = True
         except (ValueError, IndexError):
             print("⚠ Error: Debe seleccionar columnas válidas. Intente nuevamente.")
 
