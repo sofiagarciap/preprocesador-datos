@@ -98,6 +98,7 @@ class Menu:
             self.preprocesado_datos.manejo_valores_faltantes()
             self.estado_subopciones["manejo_datos_faltantes"] = True
         elif opcion == "2.3" and self.estado_subopciones["manejo_datos_faltantes"]:
+            self.preprocesado_datos.datos_categoricos()
             self.estado_subopciones["transformacion_categoricos"] = True
         elif opcion == "2.4" and self.estado_subopciones["transformacion_categoricos"]:
             self.estado_subopciones["normalizacion_escalado"] = True

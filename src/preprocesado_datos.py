@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
 class PreprocesadoDatos:
     def __init__(self, data_loader):
@@ -62,6 +63,7 @@ class PreprocesadoDatos:
                     if pd.api.types.is_numeric_dtype(df[col]):
                         mediana = df[col].median()
                         df[col] = df[col].fillna(mediana)
+                        print(mediana)
                     else:
                         print(f"⚠ No se puede calcular la mediana para la columna '{col}' (no numérica).")
                 print("Valores faltantes rellenados con la mediana de cada columna numérica.")
@@ -85,6 +87,77 @@ class PreprocesadoDatos:
                 except Exception as e:
                     print(f"⚠ Error: {e}")
             elif opcion == "6":
+                return False
+            else:
+                print("Opción no válida. Intente nuevamente.")
+
+
+    def datos_categoricos(self):
+        df = self.data_loader.dataset
+        columnas_categoricas = [
+            col for col in self.features
+            if df[col].dtype == 'object' or pd.api.types.is_categorical_dtype(df[col])
+        ]
+
+        print("=============================")
+        print("Transformación de Datos Categóricos")
+        print("=============================")
+
+        if not columnas_categoricas:
+            print("No se han detectado columnas categóricas en las variables de entrada seleccionadas.")
+            print("No es necesario aplicar ninguna transformación.")
+            self.categoricos_transformados = True
+            return True
+
+        print("Se han detectado columnas categóricas en las variables de entrada seleccionadas:")
+        for col in columnas_categoricas:
+            print(f"  - {col}")
+
+        while True:
+            print("\nSeleccione una estrategia de transformación:")
+            print("  [1] One-Hot Encoding (genera nuevas columnas binarias)")
+            print("  [2] Label Encoding (convierte categorías a números enteros)")
+            print("  [3] Volver al menú principal")
+            opcion = input("Seleccione una opción: ")
+            features_original = self.features.copy()
+
+            if opcion == "1":
+                df_transformado = pd.get_dummies(df, columns=columnas_categoricas)
+                self.data_loader.dataset = df_transformado
+                self.features = [
+                    col for col in df_transformado.columns
+                    if col != self.target and not col == self.target
+                ]
+                nuevas_columnas = list(df_transformado.columns)
+                nuevas_features = []
+
+                for f in features_original:
+                    if f in nuevas_columnas:
+                        nuevas_features.append(f)  # columna no categórica, sigue igual
+                    else:
+                     # columna fue transformada, buscar todas las columnas que empiezan con ese nombre
+                        nuevas_features.extend([col for col in nuevas_columnas if col.startswith(f + "_") or col == f])
+
+                self.features = nuevas_features
+                print("Nuevas columnas del dataset completo:")
+                print(nuevas_columnas)
+
+                print("Nuevas columnas seleccionadas como features:")
+                print(nuevas_features)
+
+                print("Transformación completada con One-Hot Encoding.")
+                self.categoricos_transformados = True
+                return True
+
+            elif opcion == "2":
+                for col in columnas_categoricas:
+                    le = LabelEncoder()
+                    df[col] = le.fit_transform(df[col].astype(str))
+                print("Transformación completada con Label Encoding.")
+                self.categoricos_transformados = True
+                return True
+
+            elif opcion == "3":
                 return False
             else:
                 print("Opción no válida. Intente nuevamente.")
