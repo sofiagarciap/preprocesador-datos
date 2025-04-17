@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
 
 class PreprocesadoDatos:
     def __init__(self, data_loader):
@@ -98,6 +98,7 @@ class PreprocesadoDatos:
             col for col in self.features
             if df[col].dtype == 'object' or pd.api.types.is_categorical_dtype(df[col])
         ]
+        print(columnas_categoricas)
 
         print("=============================")
         print("Transformación de Datos Categóricos")
@@ -119,31 +120,28 @@ class PreprocesadoDatos:
             print("  [2] Label Encoding (convierte categorías a números enteros)")
             print("  [3] Volver al menú principal")
             opcion = input("Seleccione una opción: ")
-            features_original = self.features.copy()
 
             if opcion == "1":
                 df_transformado = pd.get_dummies(df, columns=columnas_categoricas)
+                columnas_dummies = [col for col in df_transformado.columns if df_transformado[col].dtype == 'bool']
+                df_transformado[columnas_dummies] = df_transformado[columnas_dummies].astype(int)
                 self.data_loader.dataset = df_transformado
-                self.features = [
-                    col for col in df_transformado.columns
-                    if col != self.target and not col == self.target
-                ]
+                
                 nuevas_columnas = list(df_transformado.columns)
                 nuevas_features = []
 
-                for f in features_original:
-                    if f in nuevas_columnas:
-                        nuevas_features.append(f)  # columna no categórica, sigue igual
-                    else:
-                     # columna fue transformada, buscar todas las columnas que empiezan con ese nombre
-                        nuevas_features.extend([col for col in nuevas_columnas if col.startswith(f + "_") or col == f])
+                for f in self.features:
+                    if f == self.target:
+                        continue
+                    elif f in nuevas_columnas:
+                        nuevas_features.append(f)  
+                    elif f in columnas_categoricas:
+                          nuevas_features.extend([col for col in nuevas_columnas if col.startswith(f + "_") or col == f])
 
                 self.features = nuevas_features
-                print("Nuevas columnas del dataset completo:")
-                print(nuevas_columnas)
 
-                print("Nuevas columnas seleccionadas como features:")
-                print(nuevas_features)
+                print("\nPrimeras 5 filas del DataFrame transformado:")
+                print(df_transformado.head())
 
                 print("Transformación completada con One-Hot Encoding.")
                 self.categoricos_transformados = True
@@ -153,7 +151,8 @@ class PreprocesadoDatos:
                 for col in columnas_categoricas:
                     le = LabelEncoder()
                     df[col] = le.fit_transform(df[col].astype(str))
-                print("Transformación completada con Label Encoding.")
+                print("\nPrimeras 5 filas del DataFrame transformado:")
+                print(df.head()) 
                 self.categoricos_transformados = True
                 return True
 
@@ -161,3 +160,5 @@ class PreprocesadoDatos:
                 return False
             else:
                 print("Opción no válida. Intente nuevamente.")
+
+ 

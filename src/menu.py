@@ -38,10 +38,6 @@ class Menu:
             "deteccion_atipicos": False,
         }
     
-    def todos_preprocesados_completos(self):
-        """Verifica si todas las subopciones de preprocesado están completas"""
-        return all(self.estado_subopciones.values())
-
     def menu(self):
         print("=============================")
         print("Menú Principal")
@@ -53,25 +49,23 @@ class Menu:
         if self.estado["cargar_datos"]:
             if (self.habilitado("2. Preprocesado de datos", True)):
                 print(self.habilitado("2. Preprocesado de datos", True))
-                print("    " + self.habilitado("2.1 Selección de columnas", not self.estado_subopciones["seleccionar_columnas"]))
-                print("    " + self.habilitado("2.2 Manejo de datos faltantes", self.estado_subopciones["seleccionar_columnas"]))
-                print("    " + self.habilitado("2.3 Transformación de datos categóricos", self.estado_subopciones["manejo_datos_faltantes"]))
-                print("    " + self.habilitado("2.4 Normalización y escalado", self.estado_subopciones["transformacion_categoricos"]))
-                print("    " + self.habilitado("2.5 Detección y manejo de valores atípicos", self.estado_subopciones["normalizacion_escalado"]))
+                print("\t" + self.habilitado("2.1 Selección de columnas", not self.estado_subopciones["seleccionar_columnas"]))
+                print("\t" + self.habilitado("2.2 Manejo de datos faltantes", self.estado_subopciones["seleccionar_columnas"]))
+                print("\t" + self.habilitado("2.3 Transformación de datos categóricos", self.estado_subopciones["manejo_datos_faltantes"]))
+                print("\t" + self.habilitado("2.4 Normalización y escalado", self.estado_subopciones["transformacion_categoricos"]))
+                print("\t" + self.habilitado("2.5 Detección y manejo de valores atípicos", self.estado_subopciones["normalizacion_escalado"]))
         else:
             print(self.habilitado("2. Preprocesado de datos", False))
 
-        if self.estado_subopciones["deteccion_atipicos"]:
-            print(self.habilitado("3. Visualización de datos", True))
-            print(self.habilitado("4. Exportar datos", True))
+        print(self.habilitado("3. Visualización de datos", self.estado_subopciones["deteccion_atipicos"]))
+        print(self.habilitado("4. Exportar datos", self.estado["visualizar_datos"]))
+
+        if self.estado["exportar_datos"]:
+            print(self.habilitado("5. Salir", not self.estado["exportar_datos"]))
         else:
-            print(self.habilitado("3. Visualización de datos", False))
-            print(self.habilitado("4. Exportar datos", False))
-
-        print("[✓] 5. Salir")
-
-
+            print("[✓] 5. Salir")
         
+
     def habilitado(self, texto, hab):
         clave_estado = self.opciones_estado.get(texto, None)  # Buscar clave en el diccionario de opciones
         if clave_estado is None:  # Si es una subopción, buscar en el diccionario de subopciones
@@ -101,10 +95,10 @@ class Menu:
             self.preprocesado_datos.datos_categoricos()
             self.estado_subopciones["transformacion_categoricos"] = True
         elif opcion == "2.4" and self.estado_subopciones["transformacion_categoricos"]:
+            self.preprocesado_datos.normalizar_escalar_datos()
             self.estado_subopciones["normalizacion_escalado"] = True
         elif opcion == "2.5" and self.estado_subopciones["normalizacion_escalado"]:
             self.estado_subopciones["deteccion_atipicos"] = True
-            self.estado["preprocesar_datos"] = True
             self.estado["preprocesar_datos"] = True
         elif opcion == "3" and self.estado["preprocesar_datos"] and self.estado_subopciones["deteccion_atipicos"]:
             self.estado["visualizar_datos"] = True
