@@ -67,12 +67,12 @@ class Menu:
         
 
     def habilitado(self, texto, hab):
-        clave_estado = self.opciones_estado.get(texto, None)  # Buscar clave en el diccionario de opciones
-        if clave_estado is None:  # Si es una subopción, buscar en el diccionario de subopciones
+        clave_estado = self.opciones_estado.get(texto, None)  
+        if clave_estado is None:  
             clave_estado = self.subopciones_estado.get(texto, None)
         
         if clave_estado is None:
-            return texto  # Si la opción no está en los diccionarios, devolver el texto tal cual
+            return texto  
 
         if self.estado.get(clave_estado, False) or self.estado_subopciones.get(clave_estado, False):
             return f"[✓] {texto}"  # La opción o subopción ya se completó

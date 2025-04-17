@@ -5,6 +5,7 @@ class PreprocesadoDatos:
     def __init__(self, data_loader):
         self.data_loader = data_loader
         self.features = []
+        self.columnas_numericas_originales = []
         self.target = None
 
     def seleccionar_columnas(self, features_input, target_input):
@@ -12,6 +13,12 @@ class PreprocesadoDatos:
         columnas = list(self.data_loader.dataset.columns)
 
         self.features = [columnas[i - 1] for i in features_input]
+        df = self.data_loader.dataset
+        self.columnas_numericas_originales = [
+             col for col in self.features
+            if pd.api.types.is_numeric_dtype(df[col])
+            ]
+
         self.target = columnas[target_input - 1]
 
     def manejo_valores_faltantes(self):
@@ -161,4 +168,53 @@ class PreprocesadoDatos:
             else:
                 print("Opción no válida. Intente nuevamente.")
 
- 
+    def normalizar_escalar_datos(self):
+        df = self.data_loader.dataset
+        columnas_numericas = [
+            col for col in self.features
+            if col in self.columnas_numericas_originales
+        ]
+
+        print("=============================")
+        print("Normalización y Escalado")
+        print("=============================")
+
+        if not columnas_numericas:
+            print("No se han detectado columnas numéricas en las variables de entrada seleccionadas.")
+            print("No es necesario aplicar ninguna normalización.")
+            self.normalizacion_completada = True
+            return True
+
+        print("Se han detectado columnas numéricas en las variables de entrada seleccionadas:")
+        for col in columnas_numericas:
+            print(f"  - {col}")
+
+        while True:
+            print("\nSeleccione una estrategia de normalización:")
+            print("  [1] Min-Max Scaling (escala valores entre 0 y 1)")
+            print("  [2] Z-score Normalization (media 0, desviación estándar 1)")
+            print("  [3] Volver al menú principal")
+            opcion = input("Seleccione una opción: ")
+
+            if opcion == "1":
+                scaler = MinMaxScaler()
+                df[columnas_numericas] = scaler.fit_transform(df[columnas_numericas])
+                print("Normalización completada con Min-Max Scaling.")
+                print(df[columnas_numericas].head())
+                self.normalizacion_completada = True
+                
+                return True
+
+            elif opcion == "2":
+                scaler = StandardScaler()
+                df[columnas_numericas] = scaler.fit_transform(df[columnas_numericas])
+                print("Normalización completada con Z-score Normalization.")
+                print(df[columnas_numericas].head())
+                self.normalizacion_completada = True
+                return True
+
+            elif opcion == "3":
+                return False
+            else:
+                print("Opción no válida. Intente nuevamente.")
+
