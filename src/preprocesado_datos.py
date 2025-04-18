@@ -21,7 +21,7 @@ class PreprocesadoDatos:
 
         self.target = columnas[target_input - 1]
 
-    def manejo_valores_faltantes(self):
+    def valores_faltantes(self):
         df = self.data_loader.dataset
         columnas_a_revisar = self.features + [self.target]
 
@@ -146,10 +146,6 @@ class PreprocesadoDatos:
                           nuevas_features.extend([col for col in nuevas_columnas if col.startswith(f + "_") or col == f])
 
                 self.features = nuevas_features
-
-                print("\nPrimeras 5 filas del DataFrame transformado:")
-                print(df_transformado.head())
-
                 print("Transformación completada con One-Hot Encoding.")
                 self.categoricos_transformados = True
                 return True
@@ -158,8 +154,7 @@ class PreprocesadoDatos:
                 for col in columnas_categoricas:
                     le = LabelEncoder()
                     df[col] = le.fit_transform(df[col].astype(str))
-                print("\nPrimeras 5 filas del DataFrame transformado:")
-                print(df.head()) 
+                print("Transformación completada con Label Encoding Encoding.")
                 self.categoricos_transformados = True
                 return True
 
@@ -200,7 +195,6 @@ class PreprocesadoDatos:
                 scaler = MinMaxScaler()
                 df[columnas_numericas] = scaler.fit_transform(df[columnas_numericas])
                 print("Normalización completada con Min-Max Scaling.")
-                print(df[columnas_numericas].head())
                 self.normalizacion_completada = True
                 
                 return True
@@ -209,12 +203,93 @@ class PreprocesadoDatos:
                 scaler = StandardScaler()
                 df[columnas_numericas] = scaler.fit_transform(df[columnas_numericas])
                 print("Normalización completada con Z-score Normalization.")
-                print(df[columnas_numericas].head())
                 self.normalizacion_completada = True
                 return True
 
             elif opcion == "3":
                 return False
+            else:
+                print("Opción no válida. Intente nuevamente.")
+
+    def valores_atipicos(self):
+        df = self.data_loader.dataset
+        columnas_numericas = [
+            col for col in (self.features + [self.target])
+            if col in self.columnas_numericas_originales
+        ]
+
+        print("=============================")
+        print("Detección y Manejo de Valores Atípicos")
+        print("=============================")
+
+        if not columnas_numericas:
+            print("No se han detectado columnas numéricas en las variables de entrada seleccionadas.")
+            print("No es necesario aplicar ninguna estrategia.")
+            self.outliers_gestionados = True
+            return True
+
+        valores_atipicos_por_columna = {}
+        for col in columnas_numericas:
+            Q1 = df[col].quantile(0.25)
+            Q3 = df[col].quantile(0.75)
+            IQR = Q3 - Q1
+            outliers = df[(df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))]
+            if not outliers.empty:
+                valores_atipicos_por_columna[col] = outliers.shape[0]
+
+        if not valores_atipicos_por_columna:
+            print("No se han detectado valores atípicos en las columnas seleccionadas.")
+            print("No es necesario aplicar ninguna estrategia.")
+            self.outliers_gestionados = True
+            return True
+
+        print("Se han detectado valores atípicos en las siguientes columnas numéricas seleccionadas:")
+        for col, count in valores_atipicos_por_columna.items():
+            print(f"  - {col}: {count} valores atípicos detectados")
+
+        while True:
+            print("\nSeleccione una estrategia para manejar los valores atípicos:")
+            print("  [1] Eliminar filas con valores atípicos")
+            print("  [2] Reemplazar valores atípicos con la mediana de la columna")
+            print("  [3] Mantener valores atípicos sin cambios")
+            print("  [4] Volver al menú principal")
+            opcion = input("Seleccione una opción: ")
+
+            if opcion == "1":
+                for col in valores_atipicos_por_columna:
+                    Q1 = df[col].quantile(0.25)
+                    Q3 = df[col].quantile(0.75)
+                    IQR = Q3 - Q1
+                    df = df[(df[col] >= (Q1 - 1.5 * IQR)) & (df[col] <= (Q3 + 1.5 * IQR))]
+                self.data_loader.dataset = df
+                print(df.head())
+                print("Filas con valores atípicos eliminadas.")
+                self.outliers_gestionados = True
+                return True
+
+            elif opcion == "2":
+                for col in valores_atipicos_por_columna:
+                    Q1 = df[col].quantile(0.25)
+                    Q3 = df[col].quantile(0.75)
+                    IQR = Q3 - Q1
+                    lower_bound = Q1 - 1.5 * IQR
+                    upper_bound = Q3 + 1.5 * IQR
+                    mediana = df[col].median()
+                    df[col] = df[col].apply(lambda x: mediana if x < lower_bound or x > upper_bound else x)
+                self.data_loader.dataset = df
+                print(df.head())
+                print("Valores atípicos reemplazados con la mediana de cada columna.")
+                self.outliers_gestionados = True
+                return True
+
+            elif opcion == "3":
+                print("Valores atípicos mantenidos sin cambios.")
+                self.outliers_gestionados = True
+                return True
+
+            elif opcion == "4":
+                return False
+
             else:
                 print("Opción no válida. Intente nuevamente.")
 

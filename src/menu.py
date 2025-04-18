@@ -89,7 +89,7 @@ class Menu:
         elif opcion == "2.1":
             self.seleccionar_columnas()
         elif opcion == "2.2" and self.estado_subopciones["seleccionar_columnas"]:
-            self.preprocesado_datos.manejo_valores_faltantes()
+            self.preprocesado_datos.valores_faltantes()
             self.estado_subopciones["manejo_datos_faltantes"] = True
         elif opcion == "2.3" and self.estado_subopciones["manejo_datos_faltantes"]:
             self.preprocesado_datos.datos_categoricos()
@@ -98,6 +98,7 @@ class Menu:
             self.preprocesado_datos.normalizar_escalar_datos()
             self.estado_subopciones["normalizacion_escalado"] = True
         elif opcion == "2.5" and self.estado_subopciones["normalizacion_escalado"]:
+            self.preprocesado_datos.valores_atipicos()
             self.estado_subopciones["deteccion_atipicos"] = True
             self.estado["preprocesar_datos"] = True
         elif opcion == "3" and self.estado["preprocesar_datos"] and self.estado_subopciones["deteccion_atipicos"]:
