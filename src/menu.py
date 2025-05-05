@@ -5,7 +5,7 @@ class Menu:
     def __init__(self):
         self.reiniciar_estado()
         self.data_loader = DataLoader()
-        self.preprocesado_datos = PreprocesadoDatos(self.data_loader)
+        self.preprocesado_datos = None
 
         self.opciones_estado = {
             "1. Cargar datos": "cargar_datos",
@@ -167,6 +167,7 @@ class Menu:
         print("=============================")
         
         print("Columnas disponibles en los datos:")
+        self.preprocesado_datos = PreprocesadoDatos(self.data_loader)
         columnas = list(self.data_loader.dataset.columns)
         for i, columna in enumerate(columnas, 1):
             print(f"  [{i}] {columna}")
