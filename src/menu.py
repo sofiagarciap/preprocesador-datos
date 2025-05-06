@@ -1,11 +1,13 @@
 from data_loader import DataLoader
 from preprocesado_datos import PreprocesadoDatos
+from visualizador_datos import VisualizadorDatos
 
 class Menu:
     def __init__(self):
         self.reiniciar_estado()
         self.data_loader = DataLoader()
         self.preprocesado_datos = None
+        self.visualizador_datos = None
 
         self.opciones_estado = {
             "1. Cargar datos": "cargar_datos",
@@ -102,6 +104,14 @@ class Menu:
             self.estado_subopciones["deteccion_atipicos"] = True
             self.estado["preprocesar_datos"] = True
         elif opcion == "3" and self.estado["preprocesar_datos"] and self.estado_subopciones["deteccion_atipicos"]:
+            self.visualizador_datos = VisualizadorDatos(
+                self.data_loader.dataset,  # Datos originales
+                self.preprocesado_datos.dataset_modificado,  # Datos preprocesados
+                self.preprocesado_datos.columnas_seleccionadas,  # Columnas seleccionadas
+                self.preprocesado_datos.columnas_numericas,  # Columnas numéricas
+                self.preprocesado_datos.columnas_categoricas  # Columnas categóricas
+            )
+            self.visualizador_datos.menu_visualizacion()  # Llamar al menú de visualización
             self.estado["visualizar_datos"] = True
         elif opcion == "4" and self.estado["preprocesar_datos"] and self.estado_subopciones["deteccion_atipicos"]:
             self.estado["exportar_datos"] = True

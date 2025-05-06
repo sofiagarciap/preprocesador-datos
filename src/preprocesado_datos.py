@@ -155,6 +155,10 @@ class PreprocesadoDatos:
                           nuevas_features.extend([col for col in nuevas_columnas if col.startswith(f + "_") or col == f])
 
                 self.features = nuevas_features
+                self.columnas_categoricas = [
+                    col for col in nuevas_features
+                    if any(orig + "_" in col for orig in columnas_categoricas)
+                ]
                 print("Transformación completada con One-Hot Encoding.")
                 self.categoricos_transformados = True
                 return True
