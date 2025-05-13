@@ -5,14 +5,29 @@ from exportador_datos import ExportarDatos
 
 
 class Menu:
+    """
+    Clase Menu que gestiona un pipeline interactivo de procesamiento de datos.
+    
+    Este menú guía al usuario a través de los pasos de:
+    1. Carga de datos
+    2. Preprocesamiento de datos (en 5 subetapas)
+    3. Visualización de datos
+    4. Exportación de datos procesados
+
+    Asegura que los pasos se realicen en orden y que cada etapa se habilite
+    solo si la etapa anterior ha sido completada correctamente.
+    """
     def __init__(self):
+        """
+        Inicializa el menú y su estado.
+        """
         self.reiniciar_estado()
         self.data_loader = DataLoader()
         self.preprocesado_datos = None
         self.visualizador_datos = None
         self.exportador = None
 
-
+        # Diccionarios que mapean las opciones del menú a las funciones del sistema
         self.opciones_estado = {
             "1. Cargar datos": "cargar_datos",
             "2. Preprocesado de datos": "preprocesar_datos",
@@ -29,6 +44,9 @@ class Menu:
         }
 
     def reiniciar_estado(self):
+        """
+        Inicializa los estados principales y de subopciones del menu como no hechos cada vez que se ejecuta el programa.
+        """
         self.estado = {
             "cargar_datos": False,
             "preprocesar_datos": False,
@@ -45,34 +63,47 @@ class Menu:
         }
     
     def menu(self):
+        """
+        Muestra el menú principal con opciones habilitadas o bloqueadas según el progreso del usuario en el pipeline.
+        """
         print("=============================")
         print("Menú Principal")
         print("=============================")
 
-        # Mostrar opción de cargar datos
-        print(self.habilitado("1. Cargar datos", True))
+        # Paso 1: Cargar datos siempre está habilitado
+        print(self.habilitado("1. Cargar datos", True, "ningún archivo cargado"))
 
+        # Paso 2: Preprocesamiento habilitado solo si se han cargado los datos
         if self.estado["cargar_datos"]:
-            if (self.habilitado("2. Preprocesado de datos", True)):
-                print(self.habilitado("2. Preprocesado de datos", True))
-                print("\t" + self.habilitado("2.1 Selección de columnas", not self.estado_subopciones["seleccionar_columnas"]))
-                print("\t" + self.habilitado("2.2 Manejo de datos faltantes", self.estado_subopciones["seleccionar_columnas"]))
-                print("\t" + self.habilitado("2.3 Transformación de datos categóricos", self.estado_subopciones["manejo_datos_faltantes"]))
-                print("\t" + self.habilitado("2.4 Normalización y escalado", self.estado_subopciones["transformacion_categoricos"]))
-                print("\t" + self.habilitado("2.5 Detección y manejo de valores atípicos", self.estado_subopciones["normalizacion_escalado"]))
+            if (self.habilitado("2. Preprocesado de datos", True, "requiere carga de datos")):
+                # Subopciones del preprocesamiento mostradas según estado
+                print(self.habilitado("2. Preprocesado de datos", True, "requiere carga de datos"))
+                print("\t" + self.habilitado("2.1 Selección de columnas", not self.estado_subopciones["seleccionar_columnas"], ""))
+                print("\t" + self.habilitado("2.2 Manejo de datos faltantes", self.estado_subopciones["seleccionar_columnas"], "requiere selección de columnas"))
+                print("\t" + self.habilitado("2.3 Transformación de datos categóricos", self.estado_subopciones["manejo_datos_faltantes"], "requiere manejo de valores faltantes"))
+                print("\t" + self.habilitado("2.4 Normalización y escalado", self.estado_subopciones["transformacion_categoricos"], "requiere transformación categórica"))
+                print("\t" + self.habilitado("2.5 Detección y manejo de valores atípicos", self.estado_subopciones["normalizacion_escalado"], "requiere normalización"))
         else:
-            print(self.habilitado("2. Preprocesado de datos", False))
+            print(self.habilitado("2. Preprocesado de datos", False, "requiere carga de datos"))
 
-        print(self.habilitado("3. Visualización de datos", self.estado_subopciones["deteccion_atipicos"]))
-        print(self.habilitado("4. Exportar datos", self.estado["visualizar_datos"]))
+        # Paso 3 y 4: Visualización y exportación dependen de etapas previas
+        print(self.habilitado("3. Visualización de datos", self.estado_subopciones["deteccion_atipicos"], "requiere preprocesado completo"))
+        print(self.habilitado("4. Exportar datos", self.estado["visualizar_datos"], "requiere preprocesado completo"))
 
+        # Salida del sistema
         if self.estado["exportar_datos"]:
-            print(self.habilitado("5. Salir", self.estado["exportar_datos"]))
+            print("[-] 5. Salir")
         else:
             print("[✓] 5. Salir")
         
 
-    def habilitado(self, texto, hab):
+    def habilitado(self, texto, hab, error):
+        """
+        Devuelve un string con el texto de la opción del menú indicando si está:
+        - Completada ([✓])
+        - Disponible para ejecutar ([-])
+        - Bloqueada ([✗])
+        """
         clave_estado = self.opciones_estado.get(texto, None)  
         if clave_estado is None:  
             clave_estado = self.subopciones_estado.get(texto, None)
@@ -81,32 +112,62 @@ class Menu:
             return texto  
 
         if self.estado.get(clave_estado, False) or self.estado_subopciones.get(clave_estado, False):
-            return f"[✓] {texto}"  # La opción o subopción ya se completó
+            return f"[✓] {texto} (completado)"  # La opción o subopción ya se completó
         elif hab:
-            return f"[-] {texto}"  # Se habilita la opción si está en el estado correcto
+            return f"[-] {texto} (pendiente)"  # Se habilita la opción si está en el estado correcto
         else:
-            return f"[✗] {texto}"  # La opción está bloqueada
+            return f"[✗] {texto} ({error})"  # La opción está bloqueada
     
     def opciones(self, opcion):
+        """
+        Ejecuta la acción correspondiente a la opción seleccionada del menú.
+        Controla la secuencia y validación de cada etapa del pipeline.
+        """
+        # Paso 1: Cargar datos
         if opcion == "1":
             self.cargar_datos()
+
+        # Paso 2: Entrar al bloque de preprocesamiento
         elif opcion == "2" and self.estado["cargar_datos"]:
             self.estado["preprocesar_datos"] = False
+        # 2.1 Selección de columnas (solo si no se han procesado faltantes aún)
         elif opcion == "2.1":
-            self.seleccionar_columnas()
+            if self.estado_subopciones["manejo_datos_faltantes"]:
+                print("No se puede volver a seleccionar columnas después de comenzar el manejo de datos faltantes.")
+            else:
+                self.preprocesado_datos = PreprocesadoDatos(self.data_loader)
+                desbloquear = self.preprocesado_datos.seleccionar_columnas()
+                if desbloquear:
+                    self.estado_subopciones["seleccionar_columnas"] = True # Habilita el siguiente paso
+        # 2.2 Manejo de valores faltantes
         elif opcion == "2.2" and self.estado_subopciones["seleccionar_columnas"]:
-            self.preprocesado_datos.valores_faltantes()
-            self.estado_subopciones["manejo_datos_faltantes"] = True
+            desbloquear = self.preprocesado_datos.valores_faltantes()
+            if desbloquear:
+                self.estado_subopciones["manejo_datos_faltantes"] = True # Habilita el siguiente paso
+        # 2.3 Transformación de datos categóricos
         elif opcion == "2.3" and self.estado_subopciones["manejo_datos_faltantes"]:
-            self.preprocesado_datos.datos_categoricos()
-            self.estado_subopciones["transformacion_categoricos"] = True
+            if self.estado_subopciones["transformacion_categoricos"]:
+                print("No se han detectado columnas categóricas en las variables de entrada seleccionadas.")
+                print("No es necesario aplicar ninguna transformación.")
+            else:
+                desbloquear = self.preprocesado_datos.datos_categoricos()
+                if desbloquear:
+                    self.estado_subopciones["transformacion_categoricos"] = True # Habilita el siguiente paso
+        # 2.4 Normalización y escalado
         elif opcion == "2.4" and self.estado_subopciones["transformacion_categoricos"]:
-            self.preprocesado_datos.normalizar_escalar_datos()
-            self.estado_subopciones["normalizacion_escalado"] = True
+            if self.estado_subopciones["normalizacion_escalado"]:
+                print("Ya se ha aplicado la normalización en las columnas numéricas. No es necesario volver a hacerlo")
+            else:
+                desbloquear = self.preprocesado_datos.normalizar_escalar_datos()
+                if desbloquear:
+                    self.estado_subopciones["normalizacion_escalado"] = True # Habilita el siguiente paso
+        # 2.5 Detección y manejo de valores atípicos
         elif opcion == "2.5" and self.estado_subopciones["normalizacion_escalado"]:
-            self.preprocesado_datos.valores_atipicos()
-            self.estado_subopciones["deteccion_atipicos"] = True
-            self.estado["preprocesar_datos"] = True
+            desbloquear = self.preprocesado_datos.valores_atipicos()
+            if desbloquear:
+                self.estado_subopciones["deteccion_atipicos"] = True 
+                self.estado["preprocesar_datos"] = True # Habilita el siguiente paso
+        # Paso 3: Visualización de los datos
         elif opcion == "3" and self.estado["preprocesar_datos"] and self.estado_subopciones["deteccion_atipicos"]:
             self.visualizador_datos = VisualizadorDatos(
                 self.data_loader.dataset,  # Datos originales
@@ -116,11 +177,14 @@ class Menu:
                 self.preprocesado_datos.columnas_categoricas  # Columnas categóricas
             )
             self.visualizador_datos.menu_visualizacion()  # Llamar al menú de visualización
-            self.estado["visualizar_datos"] = True
-        elif opcion == "4" and self.estado["preprocesar_datos"] and self.estado_subopciones["deteccion_atipicos"]:
+            self.estado["visualizar_datos"] = True # Habilita el siguiente paso
+        # Paso 4: Exportación de datos
+        elif opcion == "4" and self.estado["visualizar_datos"]:
             self.exportador = ExportarDatos(self.preprocesado_datos.dataset_modificado)
-            self.exportador.exportar()
-            self.estado["exportar_datos"] = True
+            desbloquear = self.exportador.exportar()
+            if desbloquear:
+                self.estado["exportar_datos"] = True # Habilita el siguiente paso
+        # Paso 5: Salir del menú
         elif opcion == "5":
             return self.salir()
         else:
@@ -129,6 +193,12 @@ class Menu:
 
     
     def salir(self):
+        """
+        Método que gestiona la confirmación para salir de la aplicación.
+
+        Devuelve False si se confirma la salida (lo que rompe el bucle principal),
+        o True si el usuario decide permanecer en la aplicación.
+        """
         while True:
             print("=============================")
             print("Salir de la Aplicación")
@@ -139,17 +209,25 @@ class Menu:
             opcion = input("Seleccione una opción: ")
             if opcion == "1":
                 print("\n Cerrando la aplicación...")
-                return False
+                return False # Finaliza el bucle principal en `iniciar()`
             elif opcion == "2":
                 print("\n Regresando al menú principal...")
-                return True
+                return True # Regresa al menú principal
             else:
                 print("Opción no válida. Intente nuevamente.")
 
     def cargar_datos(self):
+        """
+        Método que permite al usuario cargar datos desde diferentes fuentes.
+
+        Ofrece opciones para cargar archivos CSV, Excel o bases de datos SQLite.
+        Si la carga es exitosa, actualiza el estado interno y muestra un resumen del dataset.
+        """
         if self.estado["cargar_datos"]:
+            # Evita recargar si ya se han cargado los datos
             print("Los datos ya han sido cargados. No puedes volver a realizar esta acción.")
             return
+        # Menú
         print("=============================")
         print("Carga de Datos")
         print("=============================")
@@ -158,6 +236,7 @@ class Menu:
         print("  [2] Excel")
         print("  [3] SQLite")
         print("  [4] Volver al menú principal")
+        # Lógica de carga según tipo de archivo
         opcion = input("Seleccione una opción: ")
         if opcion == "1":
             archivo = input("Ingrese la ruta del archivo CSV: ")
@@ -169,46 +248,31 @@ class Menu:
             archivo = input("Ingrese la ruta de la base de datos SQLite: ")
             self.data_loader.cargar_sqlite(archivo)
         elif opcion == "4":
-            return
+            return # Vuelve al menú principal sin hacer nada
         else:
             print("Opción no válida. Intente nuevamente.")
             return
+        
+        # Verifica si el dataset fue cargado exitosamente
         if self.data_loader.dataset is not None:
-            self.data_loader.mostrar_informacion()
-            self.estado["cargar_datos"] = True
+            self.data_loader.mostrar_informacion()  # Muestra información básica del dataset
+            self.estado["cargar_datos"] = True  # Habilita los siguientes pasos del pipeline
         
-    def seleccionar_columnas(self):
-        print("=============================")
-        print("Selección de Columnas")
-        print("=============================")
-        
-        print("Columnas disponibles en los datos:")
-        self.preprocesado_datos = PreprocesadoDatos(self.data_loader)
-        columnas = list(self.data_loader.dataset.columns)
-        for i, columna in enumerate(columnas, 1):
-            print(f"  [{i}] {columna}")
-        
-        try:
-            features_input = input("Ingrese los números de las columnas de entrada (features), separados por comas: ")
-            target_input = int(input("Ingrese el número de la columna de salida (target): "))
-            self.preprocesado_datos.seleccionar_columnas(features_input, target_input)
-            if self.preprocesado_datos.target in self.preprocesado_datos.features:
-                print("⚠ Error: La columna de salida no puede ser una feature.")
-                self.preprocesado_datos.features = []
-                self.preprocesado_datos.target = None
-            else: 
-                print(f"Selección guardada: Features = {self.preprocesado_datos.features}, Target = {self.preprocesado_datos.target}")
-                self.estado_subopciones["seleccionar_columnas"] = True
-        except (ValueError, IndexError):
-            print("⚠ Error: Debe seleccionar columnas válidas. Intente nuevamente.")
 
     def iniciar(self):
+        """
+        Método principal que inicia el ciclo de ejecución del menú.
+
+        Muestra continuamente el menú principal y espera una opción del usuario.
+        Sale del bucle solo si el usuario elige salir y lo confirma.
+        """
         while True:
-            self.menu()
+            self.menu() # Muestra las opciones disponibles según el estado
             opcion = input("Seleccione una opción: ")
             if not self.opciones(opcion):
-                break
+                break # Sale si `opciones()` devuelve False (caso de salir)
 
+# Programa principal
 if __name__ == "__main__":
     menu = Menu()
     menu.iniciar()
