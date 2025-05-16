@@ -10,7 +10,7 @@ class Menu:
     
     Este menú guía al usuario a través de los pasos de:
     1. Carga de datos
-    2. Preprocesamiento de datos (en 5 subetapas)
+    2. Preprocesamiento de datos 
     3. Visualización de datos
     4. Exportación de datos procesados
 
@@ -86,8 +86,9 @@ class Menu:
         else:
             print(self.habilitado("2. Preprocesado de datos", False, "requiere carga de datos"))
 
-        # Paso 3 y 4: Visualización y exportación dependen de etapas previas
+        # Paso 3: Visualización depende de acabar todo el preprocesado
         print(self.habilitado("3. Visualización de datos", self.estado_subopciones["deteccion_atipicos"], "requiere preprocesado completo"))
+        # Paso 4: Exportación depende de la visualización
         print(self.habilitado("4. Exportar datos", self.estado["visualizar_datos"], "requiere preprocesado completo"))
 
         # Salida del sistema
