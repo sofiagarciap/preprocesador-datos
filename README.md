@@ -11,13 +11,11 @@ Este proyecto proporciona una interfaz interactiva en consola para realizar tare
 - Visualización de variables
 - Exportación de datos preprocesados
 
-Está orientado a facilitar la preparación de datasets antes de aplicarlos a modelos de regresión lineal.
-
 
 ## Cómo ejecutar el programa
 
 1. Clonar el repositorio desde GitHub
-Abre una terminal y ejecuta el siguiente comando (reemplaza la URL con la del repositorio real si es diferente):
+Abre una terminal y ejecuta el siguiente comando:
 
     `git clone https://github.com/sofiagarciap/preprocesador-datos.git`
 
@@ -370,7 +368,7 @@ Nota: Asegúrate de tener tu archivo de datos en formato .csv, .xlsx o .db.
   - `scikit-learn`
   - `matplotlib`
   - `seaborn`
-  - `openpyxl` (para exportar a Excel)
+  - `numpy`
 
 Instálalos ejecutando:
 
